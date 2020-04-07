@@ -1,0 +1,34 @@
+<h1 class="text-center pt-2">Shared Spreadsheets</h1>
+
+<p>List of publicaally shared Spreadsheets.</p>
+<ul id="list">
+    {{#each names}}
+    <div id="{{@index}}">
+        <li contenteditable="true" id="{{@index}}">{{this}}</li>
+    </div>
+    {{/each}}
+</ul>
+
+<script>
+    const requestParams = {
+        mode: 'cors',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        },
+    };
+    let listArea = document.getElementById("list");
+    listArea.addEventListener('click', async (evt) => {
+        const { target } = evt;
+        console.log(target);
+        if (target.type === 'button') {
+            const name = target.parentNode.querySelector('li').textContent;
+            const params = { ...requestParams, method: 'DELETE' };
+            const resp = await fetch(`/sheet/${name}`, params);
+            const json = await resp.json();
+        }
+
+    });
+
+</script>

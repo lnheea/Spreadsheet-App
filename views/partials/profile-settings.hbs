@@ -1,0 +1,59 @@
+<h1 class="text-center pt-2">Profile Settings</h1>
+
+<div class="container">
+    <div class="card text-center">
+        <h4 class="pt-2">Your Profile Details</h4>
+        <hr>
+        <p class="card-text"><b>E-mail:</b> {{sess.email}} </p>
+        <p class="card-text"><b>First Name:</b> {{sess.firstName}}</p>
+        <p class="card-text pb-1"><b>Last Name:</b> {{sess.lastName}}</p>
+    </div>
+
+    <div style="margin-left: 32%; margin-top: 5%">
+        <h5 class="pt-2 pb-2">Do you wish to change your password?</h5>
+        <input id="changePassword" class="form-control mb-2" style='width: 400px; display:block' type="password"
+            placeholder="Please enter a new password!">
+        <input id="reEnterPassword" class="form-control mb-2" style='width: 400px; display:block' type="password"
+            placeholder="Re-Enter new password!">
+        <input class="btn btn-primary pt-2 text-center" style='width: 400px; display:block' id="enter" type="button" value="Enter">
+    </div>
+
+
+</div>
+
+
+
+<script>
+    let enter = document.getElementById('enter');
+    enter.addEventListener('click', function (evt) {
+        let newPassword = document.getElementById("changePassword").value;
+        let reEnter = document.getElementById("reEnterPassword").value;
+        if (newPassword == reEnter) {
+            let req = new XMLHttpRequest();
+            let obj = { newPassword: newPassword };
+            req.open('PUT', `/updatePassword`);
+            req.responseType = 'json';
+            req.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+            req.onload = function (evt) {
+                if (req.status == 200) {
+                    const resp = req.response;
+                    if (confirm("Your password has been changed! Thank you!")) {
+                        document.location = '/profile-settings'
+                    }
+                    console.log(resp);
+                }
+                else {
+                    console.log('err', req);
+                }
+            };
+            req.send(JSON.stringify(obj))
+        }
+        else {
+            if (confirm("Passwords do not match. Please try again!")) {
+                document.location = "/profile-settings"
+
+
+            }
+        }
+    });
+</script>

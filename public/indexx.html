@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SPREADSHEET APPLICATION</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+</head>
+
+<body style="background-color: lavender;">
+
+<div class="container" id="centre-screen" style="margin-top: 10%; border: 1px solid black;">
+    <div class="p-4">
+        <h1 class="text-center">SPREADSHEET APPLICATION</h1>
+        <div class="d-flex justify-content-center p-5">
+            <button type="button" class="btn btn-primary mr-2" data-toggle="modal" data-target="#id01">Sign In</button>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#id02">Sign Up</button>
+        </div>
+    </div>
+
+</div>
+
+<div class="modal fade" id="id01" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">SIGN IN</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <form action="/login" method="post">
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Email address</label>
+                  <input 
+                  type="text" 
+                  class="form-control"
+                  placeholder="Enter Username" 
+                  id="uname" 
+                  name="uname" 
+                  required>
+                </div>
+                <div class="form-group">
+                  <label for="exampleInputPassword1">Password</label>
+                  <input type="password" class="form-control" placeholder="Enter Password" id="psw" name="psw" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal fade" id="id02" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document" action="/add-new-user" method= "post">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">SIGN UP</h5>
+          <hr>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <form action="/add-new-user" method= "post">
+
+                <div class="form-group">
+                  <label for="email">Email address</label>
+                  <input type="email" placeholder="Enter Email" class="form-control" aria-describedby="email" id="email" name="uname" required>
+                  <small id="email" class="form-text text-muted">We'll never share your email with anyone else.</small>
+                </div>
+
+                <div class="form-group">
+                  <label for="psw">Password</label>
+                  <input type="password" placeholder="Enter Password" class="form-control" id="pwd" name="psw">
+                </div>
+
+                <div class="form-group">
+                    <label for="psw-repeat">Repeat Password</label>
+                    <input type="password" placeholder="Repeat Password" class="form-control" id="psw-repeat" name="psw-repeat" oninput="check(this)" required>
+                </div>
+
+                <script language="JavaScript" type="text/javascript">
+                    function check(input) {
+                        input.setCustomValidity(input.value == document.getElementById("pwd").value ? "" : "Passwords must match!")
+                    }
+                </script>
+
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" placeholder="Enter First Name" class="form-control" id="firstName" name="firstName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" placeholder="Enter Last Name" class="form-control" id="lastName" name="lastName" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- handle New User button and Custom Elements -->
+<script src="login.js"> </script>
+</body>
+</html>
