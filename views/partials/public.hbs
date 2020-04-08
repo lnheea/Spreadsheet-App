@@ -1,10 +1,11 @@
 <h1 class="text-center pt-2">Shared Spreadsheets</h1>
 
-<p>List of publicaally shared Spreadsheets.</p>
+<p>List of publically shared Spreadsheets.</p>
 <ul id="list">
     {{#each names}}
     <div id="{{@index}}">
         <li contenteditable="true" id="{{@index}}">{{this}}</li>
+        <input type="button" value="copy" id="copy" />
     </div>
     {{/each}}
 </ul>
@@ -20,15 +21,15 @@
     };
     let listArea = document.getElementById("list");
     listArea.addEventListener('click', async (evt) => {
-        const { target } = evt;
-        console.log(target);
-        if (target.type === 'button') {
-            const name = target.parentNode.querySelector('li').textContent;
-            const params = { ...requestParams, method: 'DELETE' };
+        let aVal = evt.target.value;
+        console.log(aVal);
+        if (aVal === 'copy') {
+            const name = evt.target.parentNode.querySelector('li').textContent;
+            console.log(name);
+            const params = { ...requestParams, method: 'PUT' };
             const resp = await fetch(`/sheet/${name}`, params);
             const json = await resp.json();
+            console.log(json)
         }
-
     });
-
 </script>

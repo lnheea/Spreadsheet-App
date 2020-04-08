@@ -16,8 +16,8 @@ const db = new sqlite3.Database(__dirname + "/users.db", function (err) {
                   id INTEGER PRIMARY KEY,
                   name TEXT,
                   sheet TEXT,
+                  status BOOLEAN,
                   email TEXT,
-                  shareable BOOLEAN,
                   FOREIGN KEY(email) REFERENCES users(email)
               )`);
     });
@@ -34,6 +34,7 @@ const flash = require("connect-flash");
 const cookieSession = require("cookie-session");
 const app = express();
 const CSV = require("csv-string");
+const textBody = bodyParser.text();
 
 app.use(express.static(__dirname + "/public"));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -87,6 +88,41 @@ function generate_users_page(req, res) {
       res.render("users", {
         users: rows,
         title: "Admin Page",
+        req: req,
+      });
+    }
+  });
+}
+
+// ADMIN SHEETS PAGE
+function generate_sheets_page(req, res) {
+  console.log("hits hards");
+  db.all("SELECT * FROM public", [], function (err, rows) {
+    if (!err) {
+      console.log("rows sheets", rows);
+      res.type(".html"); // set content type to html
+      res.render("allSheets", {
+        sheets: rows,
+        title: "Admin Sheets Page",
+        req: req,
+      });
+    }
+  });
+}
+
+// USER SHEETS PAGE
+function generate_user_sheets_page(req, res) {
+  console.log("hits hards");
+  db.all("SELECT * FROM public where email=?", [req.session.email], function (
+    err,
+    rows
+  ) {
+    if (!err) {
+      console.log("rows sheets", rows);
+      res.type(".html"); // set content type to html
+      res.render("userSheets", {
+        userSheets: rows,
+        title: "User Sheets Page",
         req: req,
       });
     }
@@ -151,8 +187,19 @@ app.get("/", function (req, res) {
   }
 });
 
+// Admin USERS GET ENDPOINT
 app.get("/users", authenticateAdmin, function (req, res) {
   generate_users_page(req, res);
+});
+
+// Admin SHEETS GET ENDPOINT
+app.get("/allSheets", authenticateAdmin, function (req, res) {
+  generate_sheets_page(req, res);
+});
+
+// USER SHEETS GET ENDPOINT
+app.get("/user-sheets", function (req, res) {
+  generate_user_sheets_page(req, res);
 });
 
 app.get("/failed_registration", function (req, res) {
@@ -213,7 +260,6 @@ app.post("/login", jsonParser, function (req, res) {
     [details.uname, sha256(details.psw)],
     function (err, row) {
       if (row) {
-        console.log("get", row);
         req.session.email = row.email;
         req.session.pwd = row.passwd;
         req.session.admin = row.admin;
@@ -222,7 +268,6 @@ app.post("/login", jsonParser, function (req, res) {
         req.session.login = true;
         generate_home_page(req, res);
         res.redirect("/home");
-        console.log("logged in");
       } else {
         res.redirect("/failed_login");
       }
@@ -258,14 +303,14 @@ app.get("/spreadsheet", authenticate, function (req, res) {
 // list all the spread sheets in the data base FOR USER
 app.get("/sheet-list", function (req, res) {
   const email = req.session.email;
-  db.all("SELECT name FROM public WHERE email=?", [email], function (
+  db.all("SELECT name, status FROM public WHERE email=?", [email], function (
     err,
     rows
   ) {
     if (!err) {
-      const names = rows.map((x) => x.name);
-      res.send(names); // already a string
-      console.log("sending", names);
+      // const names = rows.map((x) => x.name);
+      res.send(rows); // already a string
+      console.log("sending", rows);
     } else {
       res.send({ err: err });
     }
@@ -276,42 +321,38 @@ app.get("/sheet-list", function (req, res) {
 app.get("/sheet/:name", function (req, res) {
   const name = req.params.name;
   const email = req.session.email;
-  db.get(
-    "SELECT sheet FROM public where name = ? AND email = ?",
-    [name, email],
-    function (err, row) {
-      if (!err) {
-        res.send(row.sheet); // already a string
-        console.log("sending", row.sheet);
-      } else {
-        res.send({ err: err });
-      }
+  db.get("SELECT sheet FROM public where name = ?", [name], function (
+    err,
+    row
+  ) {
+    if (!err) {
+      res.send(row.sheet); // already a string
+    } else {
+      res.send({ err: err });
+      console.log(err);
     }
-  );
+  });
 });
 
 // updates the named sheet
 app.put("/sheet/:name", jsonParser, (req, res) => {
   const name = req.params.name;
-  const values = req.body;
+  const values = req.body.values;
+  const status = req.body.status;
   const email = req.session.email;
-  console.log("email", email);
-  console.log("received sheetname: ===", name);
   // values is now an object, but to store it in the database
   // it has to be stringified again (this can be avoided, but
   // I am keeping the example simple)
   const strValues = JSON.stringify(values);
-
   db.run(
-    `INSERT OR REPLACE INTO public (name,sheet,email) VALUES(?,?,?)`,
-    [name, strValues, email],
+    `INSERT OR REPLACE INTO public (name,sheet,status,email) VALUES(?,?,?,?)`,
+    [name, strValues, status, email],
     function (err) {
       if (!err) {
         res.send({ ok: true }); // converts to JSON
-        console.log("hits");
       } else {
         res.send({ ok: false }); // converts to JSON
-        console.log("not hit");
+        console.log(err);
       }
     }
   );
@@ -339,7 +380,6 @@ app.get("/profile-settings", authenticate, function (req, res) {
 
 app.put("/updatePassword", jsonParser, function (req, res) {
   let change = req.body;
-  console.log(change);
   let newPassword = sha256(change.newPassword);
   let email = req.session.email;
   db.run(
@@ -373,10 +413,50 @@ app.put("/update-user", jsonParser, function (req, res) {
   );
 });
 
+// app.put("/update-own-sheet/:id", jsonParser, function (req, res) {
+//   const email = req.body.email;
+//   const name = req.body.name;
+//   const id = parseInt(req.params.id);
+//   console.log("name own", name);
+//   const values = req.body.values;
+//   const status = req.body.status;
+//   const strValues = JSON.stringify(values);
+//   console.log("name own", name, ",", status, ",", strValues);
+
+//   db.run(
+//     `UPDATE public SET name=?, sheet=?, status=? where id=?`,
+//     [name, strValues, status, id],
+//     function (err) {
+//       if (!err) {
+//         res.send({ ok: true });
+//       } else {
+//         console.log(err);
+//         res.send({ ok: false });
+//       }
+//     }
+//   );
+// });
+
+// // THIS HANDLER NOT WORKING
+// app.put("/update-all-sheet", jsonParser, function (req, res) {
+//   let email = req.body.email;
+//   let name = req.body.name;
+//   db.run(`UPDATE public SET name=? WHERE email=?`, [name, email], function (
+//     err
+//   ) {
+//     if (!err) {
+//       console.log("updates sheet");
+//       res.send({ status: "successful" });
+//     } else {
+//       console.log(err);
+//       res.send({ status: "failed" });
+//     }
+//   });
+// });
+
 app.put("/user/:email", jsonParser, function (req, res) {
   let email = req.params.email;
   const user = req.body; // XXX more error checking
-  console.log("update", user);
   db.run(
     "UPDATE users SET passwd=?, firstName=?, lastName=? WHERE email=?",
     [sha256(user.passwd), user.firstName, user.lastName, email],
@@ -392,7 +472,6 @@ app.put("/user/:email", jsonParser, function (req, res) {
 
 app.delete("/user/:email", function (req, res) {
   let email = req.params.email;
-  console.log("delete", email);
   db.run(`DELETE FROM users WHERE email=?`, [email], function (err) {
     if (!err) {
       res.send({ email: email, status: "deleted" });
@@ -402,25 +481,22 @@ app.delete("/user/:email", function (req, res) {
   });
 });
 
-// list all the spread sheets in the data base
+// SHOWS SHARED
 app.get("/public", function (req, res) {
-  console.log("name");
   let email = req.session.email;
-  db.all("SELECT name FROM public WHERE email = ?", [email], function (
+  db.all("SELECT name FROM public WHERE status = true", [], function (
     err,
     rows
   ) {
     if (!err) {
       const names = rows.map((x) => x.name);
       //res.send(names); // already a strin
-      console.log("sending", names);
       res.type(".html");
       res.render("public", {
         names: names,
       });
     } else {
       res.send({ err: err });
-      console.log(err);
     }
   });
 });
@@ -434,9 +510,31 @@ app.get("/public", authenticate, function (req, res) {
   });
 });
 
+app.put("/csv-import/:name", textBody, (req, res) => {
+  const name = req.params.name;
+  const sheet = [];
+  console.log("importing", req.body);
+  // parse the CSV
+  CSV.forEach(req.body, ",", function (row, index) {
+    sheet.push(row);
+  });
+  const strValues = JSON.stringify(sheet);
+  // insert it into the data base
+  db.run(
+    `INSERT OR REPLACE INTO sheets (name,sheet) VALUES(?,?)`,
+    [name, strValues],
+    function (err) {
+      if (!err) {
+        res.send({ ok: true }); // converts to JSON
+      } else {
+        res.send({ ok: false }); // converts to JSON
+      }
+    }
+  );
+});
+
 app.put("/csv-export", jsonParser, (req, res) => {
   const values = req.body;
-  console.log("csv sheet", values);
   let csv = "";
   for (let row of values) {
     csv += CSV.stringify(row);
@@ -465,6 +563,41 @@ app.get("/csv-export/:name", (req, res) => {
     } else {
       res.status(404).send("not found");
     }
+  });
+});
+
+app.get("/sheet-chart-list", function (req, res) {
+  db.all("SELECT name FROM public", [], function (err, rows) {
+    if (!err) {
+      const names = rows.map((x) => x.name);
+      res.send(names); // already a string
+      console.log("sending", names);
+    } else {
+      res.send({ err: err });
+    }
+  });
+});
+
+// ADMIN SHEET DELETE
+app.delete("/sheets/:email", jsonParser, function (req, res) {
+  let email = req.params.email;
+  let name = req.body.name;
+  console.log("req", name);
+  db.run(`DELETE FROM public WHERE name = ?`, [name], function (err) {
+    if (!err) {
+      res.send({ status: "deleted" });
+    } else {
+      res.send({ error: err });
+    }
+  });
+});
+
+app.get("/charting", authenticate, function (req, res) {
+  res.type(".html");
+  res.render("charting", {
+    sess: req.session,
+    title: "Status",
+    req: req,
   });
 });
 

@@ -1,38 +1,38 @@
-<h1 class="text-center">Manage Users</h1>
-<a href="/allSheets">Manage Spreadsheets</a>
-
 <div id="users" class="container">
-    <table id="UsersTable" class="table">
+    <table id="SheetsTable" class="table">
         <thead>
             <tr>
-                <th scope="col">Email</th>
-                <th scope="col">Password</th>
-                <th scope="col">First Name</th>
-                <th scope="col">Last Name</th>
+                <th scope="col">Name</th>
+                <th scope="col">Delete</th>
+                <th scope="col">Shareable</th>
+                <th scope="col">Submit</th>
+
             </tr>
         </thead>
         <tbody>
-            {{#each users}}
+            {{#userSheets}}
 
             <tr id="{{email}}" class="each">
-                <td>{{email}}</td>
-                <td contenteditable="true" style="cursor: pointer;">{{passwd}}</td>
-                <td contenteditable="true" style="cursor: pointer;">{{firstName}}</td>
-                <td contenteditable="true" style="cursor: pointer;">{{lastName}}</td>
-                <td><input type="button" value="update" class="updateUser btn btn-success"></td>
+                <td contenteditable="true" style="cursor: pointer;">{{this.name}}</td>
                 <td><input type="button" value="delete" class="deleteUser btn btn-warning"></td>
+                <td><input type="checkbox" class="shareable" class="status btn btn-warning" />Click to change statusto {{this.status}}</td>
+                <td><input type="button" value="update" class="updateUser btn btn-success"></td>
             </tr>
-            {{/each}}
+            {{/userSheets}}
         </tbody>
     </table>
-</div>
 
+    <script>
 
-<script>
+        // custom element for user form
+        (function () {
+            let status = document.getElementsByClassName("status");
+            let req = new XMLHttpRequest();
 
-    // custom element for user form
-    (function () {
-        function AdminChanges(button) {
+        }());
+    </script>
+
+    {{!-- function AdminChanges(button) {
             for (let i = 0; i < button.length; i++) {
                 button[i].addEventListener('click', function (evt) {
                     let aVal = evt.target.value;
@@ -75,6 +75,4 @@
         AdminChanges(deleteB);
 
         let updateB = document.querySelectorAll(".updateUser");
-        AdminChanges(updateB);
-    }());
-</script>
+        AdminChanges(updateB); --}}

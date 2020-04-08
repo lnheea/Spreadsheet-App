@@ -56,6 +56,8 @@
 
 <body>
 
+
+
     <h2 class="text-center pt-2">Your Spreadsheets: </h2>
     <div class="container">
         <ul id="list">
@@ -63,6 +65,7 @@
     </div>
 
     <h2 class="text-center pt-2">Create your own spreadsheet</h2>
+    <a href="/user-sheets">Manage Spreadsheets</a>
     <div class="container">
         {{!-- <label> Name: <input id="sheetname"> </label><br> --}}
         <input id="sheetname" type="text" placeholder="Name of the spread sheet."><br>
@@ -72,7 +75,7 @@
         <button id="load">Load</button>
         <button id="save">Save</button><br>
     </div>
-    <div class="checkBox">
+    <div class="checkBox" style="display: flex;">
         <label class="checkbox-inline">Sharable:
             <input type="checkbox" id="shareable" value="">
         </label>
@@ -85,10 +88,10 @@
         <pre id="export-area" placeholder="Export here"></pre>
     </div>
 
-    <div class="container">
+    {{!-- <div class="container">
         <input id="import-csv" type="button" value="Import here">
         <pre id="import-area"></pre>
-    </div>
+    </div> --}}
 
 
 
@@ -120,17 +123,32 @@
         async function loadNames(container) {
             const params = { ...requestParams, method: 'GET' };
             const resp = await fetch('/sheet-list', params);
-            const json = await resp.json();
+            const json = await resp.json(); // We are getting back a tuple with name and status
             container.innerHTML = '';
             container.append(...json.map((x) => {
                 const li = document.createElement('li');
                 const span = document.createElement('span');
-                span.textContent = x;
+                span.contentEditable = "true"
+                span.textContent = x.name;
                 li.append(span);
                 li.append(' ');
                 const button = document.createElement('button');
+                const submitButton = document.createElement('button');
                 button.textContent = 'DELETE';
+                submitButton.textContent = 'SUBMIT'
+                let statusCheck;
+                if (x.status === 0) {
+                    statusCheck = document.createElement('input');
+                    statusCheck.type = "checkbox";
+                    statusCheck.checked = false;
+                } else {
+                    statusCheck = document.createElement('input');
+                    statusCheck.type = "checkbox";
+                    statusCheck.checked = true;
+                }
                 li.append(button);
+                li.append(submitButton);
+                li.append(statusCheck)
                 return li;
             }));
             console.log(json);
@@ -153,13 +171,10 @@
                 const sheet = rebuildSpreadSheet(json);
                 spreadSheet.innerHTML = '';
                 spreadSheet.append(sheet);
-                //const inputs = json;
-                // console.log(inputs)
-                // {{!-- console.log(setValues(inputs, json)); --}}
 
                 // HAS LOGIC TO SHOW SPREADSHEET WITH INPUTS
             }
-            else if (target.nodeName === 'BUTTON') {
+            else if (target.textContent === 'DELETE') {
                 const name = target.parentNode.querySelector('span').textContent;
                 const params = { ...requestParams, method: 'DELETE' };
                 const resp = await fetch(`/sheet/${name}`, params);
@@ -240,11 +255,13 @@
         saveButton.addEventListener('click', async (evt) => {
             const row1 = document.getElementById('row').value;
             const col1 = document.getElementById('col').value;
+
             const name = sheetName.value;
+
             if (name.trim().length === 0) return; // ignore if no name
             const inputs = getSheetInputs(spreadSheet); // BHOGCHODER DOL
             console.log(inputs)
-            const values = JSON.stringify(getValues(inputs));
+            const values = JSON.stringify({ "values": getValues(inputs), "status": statusToggler.checked });
             console.log(values);
             const params = { ...requestParams, method: 'PUT', body: values };
             const resp = await fetch(`/sheet/${name}`, params);
@@ -285,9 +302,79 @@
             console.log(text);
             exportArea.textContent = text;
         });
-
-
-        // get a 2D array of the inputs, note this array matches
+       // get a 2D array of the inputs, note this array matches
         // the row/column organization of the spread sheet
 
     </script>
+
+
+    <h1>CSV Import</h1>
+    <div class="ctrl">
+        <label> Name: <input id="import-name"> </label>
+        <button id="import">Import</button>
+        <p>
+            Must be 5 rows by 4 columns to match the fixed size spread sheet.
+        </p>
+        <textarea id="csv-input" rows="10" cols="50"></textarea>
+    </div>
+
+    <script>
+        async function importCSV(name, content) {
+            // the transmitted content is plain text from the text area
+            const params = {
+                ...requestParams, method: 'PUT',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'text/plain',
+                },
+                body: content,
+            };
+            const resp = await fetch(`/csv-import/${name}`, params);
+            const json = await resp.json();
+            return json;
+        }
+
+        // endpoint PUT /csv-import/:name
+        // import CSV from browser
+        const importButton = document.querySelector('#import');
+        const importName = document.querySelector('#import-name');
+        const csvInput = document.querySelector('#csv-input');
+        importButton.addEventListener('click', async (evt) => {
+            const name = importName.value;
+            if (name.trim().length === 0) return; // ignore if no name
+            const json = await importCSV(name, csvInput.value);
+            console.log(json);
+            if (json.ok) {
+                // refresh the names
+                await loadNames(listArea);
+                await downloadLinks();
+                await loadSheetChoice();
+            }
+        });
+
+    </script>
+
+
+
+    {{!-- // HERE WE ARE UPDATING SHEET NAME AND STATUS
+            else if (target.textContent === 'SUBMIT') {
+
+                const name = target.parentNode.querySelector('span').textContent;
+                let id = parseInt(target.parentNode.querySelector('span').id);
+
+                const inputs = getSheetInputs(spreadSheet); // BHOGCHODER DOL
+                const values = JSON.stringify({ "values": getValues(inputs), "status": statusToggler.checked, "name": name, "id": id });
+                console.log(values);
+                const params = { ...requestParams, method: 'PUT', body: values };
+                const resp = await fetch(`/update-own-sheet/${id}`, params);
+                const json = await resp.json();
+                console.log('save');
+                if (json.ok) {
+                    console.log('added');
+                    loadNames(listArea);
+                }
+                else {
+                    console.log('not added');
+                }
+
+            }     --}}
