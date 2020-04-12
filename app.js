@@ -37,6 +37,7 @@ const CSV = require("csv-string");
 const textBody = bodyParser.text();
 
 app.use(express.static(__dirname + "/public"));
+app.use("/js", express.static(__dirname + "/public/js"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   cookieSession({
@@ -99,11 +100,16 @@ function generate_sheets_page(req, res) {
   console.log("hits hards");
   db.all("SELECT * FROM public", [], function (err, rows) {
     if (!err) {
+      if (rows.status === 0) {
+        rows.status = false;
+      } else if (rows.status === 1) {
+        rows.status = false;
+      }
       console.log("rows sheets", rows);
       res.type(".html"); // set content type to html
       res.render("allSheets", {
         sheets: rows,
-        title: "Admin Sheets Page",
+        title: "Home",
         req: req,
       });
     }
@@ -120,9 +126,8 @@ function generate_user_sheets_page(req, res) {
     if (!err) {
       console.log("rows sheets", rows);
       res.type(".html"); // set content type to html
-      res.render("userSheets", {
+      res.render("home", {
         userSheets: rows,
-        title: "User Sheets Page",
         req: req,
       });
     }
@@ -147,10 +152,7 @@ function generate_home_page(req, res) {
 }
 
 app.get("/home", authenticate, function (req, res) {
-  res.type(".html");
-  res.render("home", {
-    req: req,
-  });
+  generate_user_sheets_page(req, res);
 });
 
 // In order to add admin access set admin to true when database is loaded
@@ -195,11 +197,6 @@ app.get("/users", authenticateAdmin, function (req, res) {
 // Admin SHEETS GET ENDPOINT
 app.get("/allSheets", authenticateAdmin, function (req, res) {
   generate_sheets_page(req, res);
-});
-
-// USER SHEETS GET ENDPOINT
-app.get("/user-sheets", function (req, res) {
-  generate_user_sheets_page(req, res);
 });
 
 app.get("/failed_registration", function (req, res) {
@@ -293,7 +290,7 @@ app.post("/logout", function (req, res) {
 
 app.get("/spreadsheet", authenticate, function (req, res) {
   res.type(".html");
-  res.render("spreadsheet", {
+  res.render("make-spreadsheet", {
     sess: req.session,
     title: "Create Spreadsheet",
     req: req,
@@ -334,8 +331,25 @@ app.get("/sheet/:name", function (req, res) {
   });
 });
 
-// updates the named sheet
-app.put("/sheet/:name", jsonParser, (req, res) => {
+app.get("/sheet/:name", function (req, res) {
+  const email = req.session.email;
+  const name = req.params.name;
+  db.all("SELECT name, status FROM public WHERE email=?", [email], function (
+    err,
+    rows
+  ) {
+    if (!err) {
+      // const names = rows.map((x) => x.name);
+      res.send(rows); // already a string
+      console.log("sending", rows);
+    } else {
+      res.send({ err: err });
+    }
+  });
+});
+
+// Handler to add sheets
+app.post("/sheet/:name", jsonParser, (req, res) => {
   const name = req.params.name;
   const values = req.body.values;
   const status = req.body.status;
@@ -345,22 +359,93 @@ app.put("/sheet/:name", jsonParser, (req, res) => {
   // I am keeping the example simple)
   const strValues = JSON.stringify(values);
   db.run(
-    `INSERT OR REPLACE INTO public (name,sheet,status,email) VALUES(?,?,?,?)`,
+    `INSERT INTO public (name,sheet,status,email) VALUES(?,?,?,?)`,
     [name, strValues, status, email],
     function (err) {
       if (!err) {
         res.send({ ok: true }); // converts to JSON
       } else {
         res.send({ ok: false }); // converts to JSON
-        console.log(err);
       }
     }
   );
 });
 
-app.delete("/sheet/:name", jsonParser, function (req, res, next) {
-  let name = req.params.name;
-  db.run(`DELETE FROM public WHERE name=?`, [name], function (err) {
+// Handler to update name and status
+app.put("/sheet/:id", jsonParser, function (req, res) {
+  const id = parseInt(req.params.id);
+  const name = req.body.name;
+  const values = req.body.values;
+  const status = req.body.status;
+  const strValues = JSON.stringify(values);
+
+  db.run(
+    `UPDATE public SET name=?, sheet=?, status=? WHERE id=? AND email = ?`,
+    [name, strValues, status, id, req.session.email],
+    function (err) {
+      if (!err) {
+        res.send({ status: "successful" });
+      } else {
+        res.send({ status: err });
+      }
+    }
+  );
+});
+
+// Handler to update name and status
+app.put("/value-update/:name", jsonParser, function (req, res) {
+  const name = req.params.name;
+  const values = req.body.values;
+  const strValues = JSON.stringify(values);
+
+  db.run(
+    `UPDATE public SET sheet=? WHERE name=? AND email = ?`,
+    [strValues, name, req.session.email],
+    function (err) {
+      if (!err) {
+        res.send({ ok: true });
+      } else {
+        res.send({ ok: false });
+      }
+    }
+  );
+});
+
+// Handler to copy sheets
+app.put("/copy-sheet/:name", jsonParser, function (req, res) {
+  const name = req.body.name;
+  db.serialize(function () {
+    db.get(`SELECT * FROM public where name=?`, [name], function (err) {
+      if (!err) {
+        res.send({ status: "successful" });
+      } else {
+        res.send({ status: err });
+      }
+    });
+    db.get("SELECT last_insert_rowid()", [], function (err, row) {
+      let id = row["last_insert_rowid()"];
+      let post = { id: id };
+      generate_notes_page(req, res);
+    });
+  });
+
+  // db.run(
+  //   `UPDATE public SET name=?, sheet=?, status=? WHERE email = ?`,
+  //   [name, strValues, status, req.session.email],
+  //   function (err) {
+  //     if (!err) {
+  //       res.send({ status: "successful" });
+  //     } else {
+  //       res.send({ status: err });
+  //     }
+  //   }
+  // );
+});
+
+// Handler to delete sheets
+app.delete("/sheet/:id", jsonParser, function (req, res, next) {
+  let id = req.params.id;
+  db.run(`DELETE FROM public WHERE id=?`, [id], function (err) {
     if (!err) {
       res.send({ ok: true });
     } else {
@@ -413,30 +498,6 @@ app.put("/update-user", jsonParser, function (req, res) {
   );
 });
 
-// app.put("/update-own-sheet/:id", jsonParser, function (req, res) {
-//   const email = req.body.email;
-//   const name = req.body.name;
-//   const id = parseInt(req.params.id);
-//   console.log("name own", name);
-//   const values = req.body.values;
-//   const status = req.body.status;
-//   const strValues = JSON.stringify(values);
-//   console.log("name own", name, ",", status, ",", strValues);
-
-//   db.run(
-//     `UPDATE public SET name=?, sheet=?, status=? where id=?`,
-//     [name, strValues, status, id],
-//     function (err) {
-//       if (!err) {
-//         res.send({ ok: true });
-//       } else {
-//         console.log(err);
-//         res.send({ ok: false });
-//       }
-//     }
-//   );
-// });
-
 // // THIS HANDLER NOT WORKING
 // app.put("/update-all-sheet", jsonParser, function (req, res) {
 //   let email = req.body.email;
@@ -484,16 +545,16 @@ app.delete("/user/:email", function (req, res) {
 // SHOWS SHARED
 app.get("/public", function (req, res) {
   let email = req.session.email;
-  db.all("SELECT name FROM public WHERE status = true", [], function (
+  db.all("SELECT name,email FROM public WHERE status = true", [], function (
     err,
     rows
   ) {
     if (!err) {
-      const names = rows.map((x) => x.name);
+      // const names = rows.map((x) => x.name);
       //res.send(names); // already a strin
       res.type(".html");
       res.render("public", {
-        names: names,
+        names: rows,
       });
     } else {
       res.send({ err: err });
@@ -510,22 +571,22 @@ app.get("/public", authenticate, function (req, res) {
   });
 });
 
+// note the textBody middleware to access the text
 app.put("/csv-import/:name", textBody, (req, res) => {
   const name = req.params.name;
-  const sheet = [];
+  const sheet = CSV.parse(req.body);
   console.log("importing", req.body);
-  // parse the CSV
-  CSV.forEach(req.body, ",", function (row, index) {
-    sheet.push(row);
-  });
+
+  console.log(sheet);
   const strValues = JSON.stringify(sheet);
   // insert it into the data base
   db.run(
-    `INSERT OR REPLACE INTO sheets (name,sheet) VALUES(?,?)`,
-    [name, strValues],
+    `INSERT OR REPLACE INTO public (name,sheet,email) VALUES(?,?,?)`,
+    [name, strValues, req.session.email],
     function (err) {
       if (!err) {
         res.send({ ok: true }); // converts to JSON
+        console.log("hits");
       } else {
         res.send({ ok: false }); // converts to JSON
       }

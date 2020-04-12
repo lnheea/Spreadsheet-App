@@ -1,14 +1,21 @@
-<h1 class="text-center pt-2">Shared Spreadsheets</h1>
-
-<p>List of publically shared Spreadsheets.</p>
-<ul id="list">
-    {{#each names}}
-    <div id="{{@index}}">
-        <li contenteditable="true" id="{{@index}}">{{this}}</li>
-        <input type="button" value="copy" id="copy" />
+<div class="jumbotron jumbotron-fluid">
+    <div class="container">
+        <h1 class="display-4 text-center">Shared Spreadsheets</h1>
     </div>
-    {{/each}}
-</ul>
+</div>
+<div class="container">
+    <ul id="list" class="list-group">
+        {{#each names}}
+        <div id="{{@index}}">
+            <span>Shared by {{this.email}}</span>
+            <li class="list-group-item d-flex justify-content-between align-items-center" id="{{@index}}">{{this.name}}
+                <span class="badge badge-primary badge-pill text-center" style="cursor:pointer">COPY</span>
+            </li>
+        </div>
+        {{/each}}
+    </ul>
+</div>
+
 
 <script>
     const requestParams = {
@@ -21,15 +28,16 @@
     };
     let listArea = document.getElementById("list");
     listArea.addEventListener('click', async (evt) => {
-        let aVal = evt.target.value;
+        let aVal = evt.target.textContent;
         console.log(aVal);
-        if (aVal === 'copy') {
-            const name = evt.target.parentNode.querySelector('li').textContent;
+        if (aVal === 'COPY') {
+            const name = evt.target.parentNode.textContent.split("\n")[0];
             console.log(name);
             const params = { ...requestParams, method: 'PUT' };
-            const resp = await fetch(`/sheet/${name}`, params);
+            const resp = await fetch(`/copy-sheet/${name}`, params);
             const json = await resp.json();
             console.log(json)
+            alert(`${name} has been copied`);
         }
     });
 </script>

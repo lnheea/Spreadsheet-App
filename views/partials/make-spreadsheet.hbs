@@ -1,0 +1,861 @@
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html {
+        font-size: 70%;
+    }
+
+    .title {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        margin: 1rem;
+    }
+
+    .title__logo {
+        height: 7rem;
+        margin: 1rem;
+    }
+
+    .title__text {
+        margin-left: 2rem;
+    }
+
+    .title__text--name {
+        font-size: 3.6rem;
+        display: inline;
+        font-weight: 600;
+    }
+
+    .title__text--description {
+        font-size: 1.6rem;
+        font-weight: 200;
+    }
+
+    .spreadsheet {
+        margin: 1rem 0.5rem;
+    }
+
+    table,
+    td,
+    th,
+    tr {
+        border: 0.05rem solid rgba(197, 197, 197, 0.486);
+        font-size: 1.4rem;
+        height: 2.5rem;
+        border-spacing: 0rem;
+    }
+
+    th {
+        font-weight: 500;
+    }
+
+    thead {
+        /* background-color: rgb(160, 180, 206); */
+        background-color: #f1f1f1;
+        /* color: #fff; */
+    }
+
+    td {
+        min-width: 10rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    th {
+        padding: 0.2rem 0.4rem;
+    }
+
+    th>.dropdown {
+        float: right;
+    }
+
+    tbody th {
+        min-width: 5rem;
+        background: #fafafa;
+    }
+
+    /* Dropdown Button */
+    .dropbtn {
+        background-color: #e2e2e2d0;
+        color: rgba(0, 0, 0, 0.5);
+        padding: 0rem 0.3rem;
+        /* /* font-size: 1.2rem; */
+        border: none;
+        cursor: pointer;
+        transition: ease 0.4s;
+    }
+
+    /* Dropdown button on hover & focus */
+    .dropbtn:hover,
+    .dropbtn:focus {
+        background-color: #d0d0d0;
+        /* visibility: visible; */
+    }
+
+    .dropbtn img {
+        height: 2rem;
+    }
+
+    /* The container <div> - needed to position the dropdown content */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    /* Dropdown Content (Hidden by Default) */
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        min-width: 16rem;
+        box-shadow: 0 0.5rem 0.8rem 0 rgba(0, 0, 0, 0.1);
+        z-index: 1;
+    }
+
+    /* Links inside the dropdown */
+    .dropdown-content p {
+        color: rgb(133, 132, 132);
+        padding: 0.4rem;
+        font-weight: 400;
+        text-decoration: none;
+        display: block;
+    }
+
+    /* Change color of dropdown links on hover */
+    .dropdown-content p:hover {
+        background-color: #ddd;
+    }
+
+    /* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+    .show {
+        display: block;
+    }
+
+    .column-header-span {
+        cursor: pointer;
+    }
+
+    .spreadsheet-controls {
+        margin-left: 0.5rem;
+    }
+
+    .reset-btn {
+        padding: 0.5rem 1.5rem;
+        background-color: #d9534f;
+        color: #fff;
+        border-color: #d43f3a;
+        border-width: 1px;
+        border-style: solid;
+        border-radius: 0.3rem;
+        cursor: pointer;
+        transition: ease 0.3s;
+    }
+
+    .reset-btn:hover {
+        color: #fff;
+        background-color: #c9302c;
+        border-color: #ac2925;
+    }
+
+    #export-csv {
+        width: 10%;
+        ;
+    }
+
+    #export-area {
+        border: thin solid black;
+        margin-top: 20px;
+        width: 30%;
+        padding: 10px;
+    }
+</style>
+
+<h3 class="text-center text-monospace pt-1">{{title}}</h3>
+
+<div class="container">
+    <div class="form-group">
+        <label for="name">Name of spreadsheet</label>
+        <input id="sheetname" class="form-control" type="text" placeholder="Name of the spread sheet."><br>
+    </div>
+    <div class="form-group">
+        <label>Rows</label>
+        <input id="row" class="form-control" placeholder="Number of rows."><br>
+    </div>
+    <div class="form-group">
+        <label>Columns</label>
+        <input id="col" class="form-control" placeholder="Number of columns."><br>
+    </div>
+    <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" type="checkbox" id="shareable">
+        <label class="form-check-label" for="shareble">Shareable</label>
+    </div>
+    <button id="submit" class="btn btn-primary">Submit</button>
+    <button id="save" class="btn btn-primary">Save</button>
+</div>
+
+
+<div class="container mt-5">
+    <div>
+        <input id="export-csv" class="btn btn-primary" type="button" value="Export">
+        <pre id="export-area" placeholder="Export here"></pre>
+    </div>
+
+    <div>
+        <h2 class="ctrl">CSV Import</h2>
+        <div class="ctrl">
+            <label> Name: <input id="import-name"> </label>
+            <button class="btn btn-primary" id="import">Import</button>
+            <p>
+                Enter your spreadsheet inputs below:
+            </p>
+            <textarea id="csv-input" rows="10" cols="50"></textarea>
+        </div>
+    </div>
+
+
+    <form>
+        <label>Your Spreadsheets</label>
+        <select id="mySelect" size="1"></select>
+        <input class="btn btn-primary" id="load" type="button" value="LOAD" />
+        <input class="btn btn-primary" id="update" type="button" value="UPDATE" />
+    </form>
+    <div class="text-center container">
+        <section class="spreadsheet">
+            <table class="spreadsheet__table" id="table-main">
+                <thead class="spreadsheet__table--headers" id="table-headers">
+                </thead>
+                <tbody class="spreadsheet__table--body" id="table-body">
+                </tbody>
+            </table>
+        </section>
+    </div>
+</div>
+
+
+
+</div>
+
+
+<script>
+    (function () {
+        const requestParams = {
+            mode: 'cors',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+        };
+        const SPREADSHEET_DB = "spreadsheet_db";
+        const submit = document.getElementById('submit');
+        const updateButton = document.getElementById('update');
+        const exportButton = document.querySelector('#export-csv')
+        const load = document.getElementById('load');
+        const spreadSheet = document.getElementById('spread-sheet');
+        const saveButton = document.querySelector('#save');
+        const sheetName = document.querySelector('#sheetname');
+        const statusToggler = document.getElementById('shareable') // Shareable toggler
+        const tableBody = document.getElementsByClassName('spreadsheet__table--body');
+        const dropDown = document.getElementById("mySelect");
+        let row1 = document.getElementById('row') // No of rows
+        let col1 = document.getElementById('col'); // No of cols
+        let updatedData;
+
+        function initializeData() {
+            // console.log("initializeData");
+            const data = [];
+            for (let i = 0; i <= row1.value; i++) {
+                const child = [];
+                for (let j = 0; j <= col1.value; j++) {
+                    child.push("");
+                }
+                data.push(child);
+            }
+            return data;
+        };
+
+        async function importCSV(name, content) {
+            // the transmitted content is plain text from the text area
+            const params = {
+                ...requestParams, method: 'PUT',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'text/plain',
+                },
+                body: content,
+            };
+            const resp = await fetch(`/csv-import/${name}`, params);
+            const json = await resp.json();
+            return json;
+        }
+
+        async function loadNames(dropDown) {
+            const params = { ...requestParams, method: 'GET' };
+            const resp = await fetch('/sheet-list', params);
+            const json = await resp.json(); // We are getting back a tuple with name and status
+            dropDown.append(...json.map((x, index) => {
+                let option = document.createElement('option');
+                option.text = x.name;
+                return option;
+            }));
+            console.log(json);
+        }
+
+        loadNames(dropDown);
+
+        // endpoint PUT /csv-import/:name
+        // import CSV from browser
+        const importButton = document.querySelector('#import');
+        const importName = document.querySelector('#import-name');
+        const csvInput = document.querySelector('#csv-input');
+        importButton.addEventListener('click', async (evt) => {
+            const name = importName.value;
+            if (name.trim().length === 0) return; // ignore if no name
+            const json = await importCSV(name, csvInput.value);
+            console.log(json);
+            if (json.ok) {
+                // refresh the names
+                await loadNames(dropDown);
+                alert(`${name} imported`);
+            }
+        });
+
+        function getData() {
+            let data;
+            if (data === undefined || data === null) {
+                return initializeData();
+            }
+            return JSON.parse(data);
+        };
+
+
+        function getDataBC(json) {
+            return JSON.parse(json)
+        }
+
+        load.addEventListener('click', async (evt) => {
+            let name = dropDown.options[dropDown.selectedIndex].value;
+            // GET /sheet/:name endpoint request
+            const params = { ...requestParams, method: 'GET' };
+            const resp = await fetch(`/sheet/${name}`, params);
+            let json = await resp.json();
+            json = JSON.stringify(json)
+            rebuildSpreadSheet(json);
+        });
+
+
+
+        function saveData(data) {
+            localStorage.setItem(SPREADSHEET_DB, JSON.stringify(data));
+        }
+
+        function getSheetInputs() {
+            let body = document.getElementsByClassName('spreadsheet__table')[0].childNodes[3].childNodes;
+            let rows = Array.from(body);
+            let sheet = rows.map((r) => Array.from(r.childNodes))
+            return sheet
+        }
+
+        function getValues(sheetInputs) {
+            let inputs = sheetInputs
+                .map((r) => r.map((c) => c.textContent));
+            for (let i = 0; i < inputs.length; i++) {
+                inputs[i].splice(0, 1)
+            }
+            return inputs
+        }
+
+        saveButton.addEventListener('click', async (evt) => {
+            const name = sheetName.value;
+            if (name.trim().length === 0) return; // ignore if no name
+            const inputs = getSheetInputs();
+            const values = JSON.stringify({ "values": getValues(inputs), "status": statusToggler.checked, "name": name });
+            const params = { ...requestParams, method: 'POST', body: values };
+            const resp = await fetch(`/sheet/${name}`, params);
+            const json = await resp.json();
+            console.log('save');
+            if (json.ok) {
+                console.log('added');
+                loadNames(dropDown);
+                alert(`${name} has been saved`)
+                // Reset toggler
+                if (statusToggler.checked === true) {
+                    statusToggler.checked = false
+                };
+            }
+            else {
+                console.log('not added');
+            }
+        });
+
+        createHeaderRow = (value) => {
+
+            const tr = document.createElement("tr");
+            tr.setAttribute("id", "h-0");
+            for (let i = 0; i <= value; i++) {
+                const th = document.createElement("th");
+                th.setAttribute("id", `h-0-${i}`);
+                th.setAttribute("class", `${i === 0 ? "" : "column-header"}`);
+                // th.innerHTML = i === 0 ? `` : `Col ${i}`;
+                if (i !== 0) {
+                    const span = document.createElement("span");
+                    span.innerHTML = `Col ${i}`;
+                    span.setAttribute("class", "column-header-span");
+                    const dropDownDiv = document.createElement("div");
+                    dropDownDiv.setAttribute("class", "dropdown");
+                    dropDownDiv.innerHTML = `<button class="dropbtn" id="col-dropbtn-${i}">+</button>
+        <div id="col-dropdown-${i}" class="dropdown-content">
+          <p class="col-insert-left">Insert 1 column left</p>
+          <p class="col-insert-right">Insert 1 column right</p>
+          <p class="col-delete">Delete column</p>
+        </div>`;
+                    th.appendChild(span);
+                    th.appendChild(dropDownDiv);
+                }
+                tr.appendChild(th);
+            }
+            return tr;
+        };
+
+        createTableBodyRow = (rowNum, col) => {
+            const tr = document.createElement("tr");
+            tr.setAttribute("id", `r-${rowNum}`);
+            for (let i = 0; i <= col; i++) {
+                const cell = document.createElement(`${i === 0 ? "th" : "td"}`);
+                if (i === 0) {
+                    cell.contentEditable = false;
+                    const span = document.createElement("span");
+                    const dropDownDiv = document.createElement("div");
+                    span.innerHTML = rowNum;
+                    dropDownDiv.setAttribute("class", "dropdown");
+                    dropDownDiv.innerHTML = `<button class="dropbtn" id="row-dropbtn-${rowNum}">+</button>
+        <div id="row-dropdown-${rowNum}" class="dropdown-content">
+          <p class="row-insert-top">Insert 1 row above</p>
+          <p class="row-insert-bottom">Insert 1 row below</p>
+          <p class="row-delete">Delete row</p>
+        </div>`;
+                    cell.appendChild(span);
+                    cell.appendChild(dropDownDiv);
+                    cell.setAttribute("class", "row-header");
+                } else {
+                    cell.contentEditable = true;
+                }
+                cell.setAttribute("id", `r-${rowNum}-${i}`);
+                // cell.id = `${rowNum}-${i}`;
+                tr.appendChild(cell);
+            }
+            return tr;
+        };
+
+        createTableBody = (tableBody, row, col) => {
+            for (let rowNum = 1; rowNum <= row; rowNum++) {
+                tableBody.appendChild(this.createTableBodyRow(rowNum, col));
+            }
+        };
+
+        populateTable = () => {
+            const data = getData();
+            if (data === undefined || data === null) return;
+
+            for (let i = 1; i < data.length; i++) {
+                for (let j = 1; j < data[i].length; j++) {
+                    const cell = document.getElementById(`r-${i}-${j}`);
+                    cell.innerHTML = data[i][j];
+                }
+            }
+        };
+
+        repopulateTable = (json) => {
+            const data = json;
+            if (data === undefined || data === null) return;
+            for (let i = 0; i < data.length; i++) {
+                for (let j = 0; j < data[i].length; j++) {
+                    const cell = document.getElementById(`r-${i}-${j}`);
+                    cell.innerHTML = data[i][j];
+                }
+            }
+        }
+
+        // Utility function to add row
+        addRow = (currentRow, direction, json) => {
+            let data;
+            if (json) {
+                data = json
+                const colCount = data[0].length;
+                const newRow = new Array(colCount).fill("");
+                if (direction === "top") {
+                    data.splice(currentRow, 0, newRow);
+                } else if (direction === "bottom") {
+                    data.splice(currentRow + 1, 0, newRow);
+                }
+                json.length.value++;
+                saveData(data);
+                this.rebuildSpreadSheet(JSON.stringify(json));
+
+            } else {
+                data = getData();
+                const colCount = data[0].length;
+                const newRow = new Array(colCount).fill("");
+                if (direction === "top") {
+                    data.splice(currentRow, 0, newRow);
+                } else if (direction === "bottom") {
+                    data.splice(currentRow + 1, 0, newRow);
+                }
+                row1.value++;
+                // saveData(data);
+                this.createSpreadsheet();
+
+            }
+
+            row1.value++;
+            saveData(data);
+            if (json) {
+            } else {
+            }
+        };
+
+        // Utility function to delete row
+        deleteRow = currentRow => {
+            let data = getData();
+            data.splice(currentRow, 1);
+            row1.value++;
+            saveData(data);
+            this.createSpreadsheet();
+        };
+
+        // Utility function to add columns
+        addColumn = (currentCol, direction) => {
+            let data = getData();
+            for (let i = 0; i <= row1.value; i++) {
+                if (direction === "left") {
+                    data[i].splice(currentCol, 0, "");
+                } else if (direction === "right") {
+                    data[i].splice(currentCol + 1, 0, "");
+                }
+            }
+            col1.value++;
+            saveData(data);
+            this.createSpreadsheet();
+        };
+
+        // Utility function to delete column
+        deleteColumn = currentCol => {
+            let data = getData();
+            for (let i = 0; i <= row1.value; i++) {
+                data[i].splice(currentCol, 1);
+            }
+            col1.value++;
+            saveData(data);
+            this.createSpreadsheet();
+        };
+
+        // Map for storing the sorting history of every column;
+        const sortingHistory = new Map();
+
+        // Utility function to sort columns
+        sortColumn = currentCol => {
+            let spreadSheetData = getData();
+            let data = spreadSheetData.slice(1);
+            if (!data.some(a => a[currentCol] !== "")) return;
+            if (sortingHistory.has(currentCol)) {
+                const sortOrder = sortingHistory.get(currentCol);
+                switch (sortOrder) {
+                    case "desc":
+                        data.sort(ascSort.bind(this, currentCol));
+                        sortingHistory.set(currentCol, "asc");
+                        break;
+                    case "asc":
+                        data.sort(dscSort.bind(this, currentCol));
+                        sortingHistory.set(currentCol, "desc");
+                        break;
+                }
+            } else {
+                data.sort(ascSort.bind(this, currentCol));
+                sortingHistory.set(currentCol, "asc");
+            }
+            data.splice(0, 0, new Array(data[0].length).fill(""));
+            saveData(data);
+            this.createSpreadsheet();
+        };
+
+        submit.addEventListener("click", function () {
+            createSpreadsheet();
+        })
+
+        // Handler to update cells
+        updateButton.addEventListener("click", async function () {
+            let name = dropDown.options[dropDown.selectedIndex].value;
+            const inputs = getSheetInputs();
+            const values = JSON.stringify({ "values": getValues(inputs) });
+            const params = { ...requestParams, method: 'PUT', body: values };
+            const resp = await fetch(`/value-update/${name}`, params);
+            const json = await resp.json();
+            console.log('save');
+            if (json.ok) {
+                console.log('added');
+                alert(`${name} has been updated`)
+            }
+            else {
+                console.log('not added');
+            }
+        });
+
+        const exporting = document.getElementById('export-csv');
+        const exportArea = document.getElementById('export-area');
+        exporting.addEventListener('click', async (evt) => {
+            const name = sheetName.value;
+            const inputs = getSheetInputs();
+            const values = JSON.stringify(getValues(inputs));
+            const params = { ...requestParams, method: 'PUT', body: values };
+            const resp = await fetch('/csv-export', params);
+            // read the text
+            const text = await resp.text();
+            console.log(text);
+            exportArea.textContent = text;
+        });
+
+
+        createSpreadsheet = () => {
+            const spreadsheetData = getData();
+
+            const tableHeaderElement = document.getElementById("table-headers");
+            const tableBodyElement = document.getElementById("table-body");
+
+            const tableBody = tableBodyElement.cloneNode(true);
+            tableBodyElement.parentNode.replaceChild(tableBody, tableBodyElement);
+            const tableHeaders = tableHeaderElement.cloneNode(true);
+            tableHeaderElement.parentNode.replaceChild(tableHeaders, tableHeaderElement);
+
+            tableHeaders.innerHTML = "";
+            tableBody.innerHTML = "";
+
+            tableHeaders.appendChild(createHeaderRow(col1.value));
+            createTableBody(tableBody, row1.value, col1.value);
+
+            populateTable();
+
+            // attach focusout event listener to whole table body container
+            tableBody.addEventListener("focusout", function (e) {
+                if (e.target && e.target.nodeName === "TD") {
+                    let item = e.target;
+                    const indices = item.id.split("-");
+                    let spreadsheetData = getData();
+                    spreadsheetData[indices[1]][indices[2]] = item.innerHTML;
+                    saveData(spreadsheetData);
+                }
+            });
+
+            // Attach click event listener to table body
+            tableBody.addEventListener("click", function (e) {
+                if (e.target) {
+                    if (e.target.className === "dropbtn") {
+                        const idArr = e.target.id.split("-");
+                        document
+                            .getElementById(`row-dropdown-${idArr[2]}`)
+                            .classList.toggle("show");
+                    }
+                    if (e.target.className === "row-insert-top") {
+                        const indices = e.target.parentNode.id.split("-");
+                        addRow(parseInt(indices[2]), "top");
+                    }
+                    if (e.target.className === "row-insert-bottom") {
+                        const indices = e.target.parentNode.id.split("-");
+                        addRow(parseInt(indices[2]), "bottom");
+                    }
+                    if (e.target.className === "row-delete") {
+                        const indices = e.target.parentNode.id.split("-");
+                        deleteRow(parseInt(indices[2]));
+                    }
+                }
+            });
+
+            // Attach click event listener to table headers
+            tableHeaders.addEventListener("click", function (e) {
+                if (e.target) {
+                    if (e.target.className === "column-header-span") {
+                        sortColumn(parseInt(e.target.parentNode.id.split("-")[2]));
+                    }
+                    if (e.target.className === "dropbtn") {
+                        const idArr = e.target.id.split("-");
+                        document
+                            .getElementById(`col-dropdown-${idArr[2]}`)
+                            .classList.toggle("show");
+                    }
+                    if (e.target.className === "col-insert-left") {
+                        const indices = e.target.parentNode.id.split("-");
+                        addColumn(parseInt(indices[2]), "left");
+                    }
+                    if (e.target.className === "col-insert-right") {
+                        const indices = e.target.parentNode.id.split("-");
+                        addColumn(parseInt(indices[2]), "right");
+                    }
+                    if (e.target.className === "col-delete") {
+                        const indices = e.target.parentNode.id.split("-");
+                        deleteColumn(parseInt(indices[2]));
+                    }
+                }
+            });
+        };
+
+        // Rebuild spreadsheet
+        rebuildSpreadSheet = (json) => {
+            const spreadsheetData = getDataBC(json);
+
+            const tableHeaderElement = document.getElementById("table-headers");
+            const tableBodyElement = document.getElementById("table-body");
+
+            const tableBody = tableBodyElement.cloneNode(true);
+            tableBodyElement.parentNode.replaceChild(tableBody, tableBodyElement);
+            const tableHeaders = tableHeaderElement.cloneNode(true);
+            tableHeaderElement.parentNode.replaceChild(tableHeaders, tableHeaderElement);
+
+            tableHeaders.innerHTML = "";
+            tableBody.innerHTML = "";
+
+            tableHeaders.appendChild(createHeaderRow(spreadsheetData[0].length));
+            createTableBody(tableBody, spreadsheetData[0].length, spreadsheetData[0].length);
+
+            // repopulateTable(spreadsheetData); 
+
+            if (spreadsheetData.length > 0) {
+                for (let i = 0; i < spreadsheetData.length; i++) {
+                    for (let j = 0; j < spreadsheetData[i].length; j++) {
+                        const cell = document.getElementById(`r-${i + 1}-${j + 1}`);
+                        cell.innerHTML = spreadsheetData[i][j];
+                    }
+                }
+            } else {
+                alert("Nothing here")
+            }
+
+
+            // attach focusout event listener to whole table body container
+            tableBody.addEventListener("focusout", function (e) {
+                if (e.target && e.target.nodeName === "TD") {
+                    let item = e.target;
+                    const indices = item.id.split("-");
+                    let spreadsheetData = getData();
+                    spreadsheetData[indices[1]][indices[2]] = item.innerHTML;
+                    saveData(spreadsheetData);
+                }
+            });
+
+            // Attach click event listener to table body
+            tableBody.addEventListener("click", function (e) {
+                if (e.target) {
+                    if (e.target.className === "dropbtn") {
+                        const idArr = e.target.id.split("-");
+                        document
+                            .getElementById(`row-dropdown-${idArr[2]}`)
+                            .classList.toggle("show");
+                    }
+                    if (e.target.className === "row-insert-top") {
+                        const indices = e.target.parentNode.id.split("-");
+                        addRow(parseInt(indices[2]), "top", spreadsheetData);
+                    }
+                    if (e.target.className === "row-insert-bottom") {
+                        const indices = e.target.parentNode.id.split("-");
+                        addRow(parseInt(indices[2]), "bottom", spreadsheetData);
+                    }
+                    if (e.target.className === "row-delete") {
+                        const indices = e.target.parentNode.id.split("-");
+                        deleteRow(parseInt(indices[2]), spreadsheetData);
+                    }
+                }
+            });
+
+            // Attach click event listener to table headers
+            tableHeaders.addEventListener("click", function (e) {
+                if (e.target) {
+                    if (e.target.className === "column-header-span") {
+                        sortColumn(parseInt(e.target.parentNode.id.split("-")[2]));
+                    }
+                    if (e.target.className === "dropbtn") {
+                        const idArr = e.target.id.split("-");
+                        document
+                            .getElementById(`col-dropdown-${idArr[2]}`)
+                            .classList.toggle("show");
+                    }
+                    if (e.target.className === "col-insert-left") {
+                        const indices = e.target.parentNode.id.split("-");
+                        addColumn(parseInt(indices[2]), "left");
+                    }
+                    if (e.target.className === "col-insert-right") {
+                        const indices = e.target.parentNode.id.split("-");
+                        addColumn(parseInt(indices[2]), "right");
+                    }
+                    if (e.target.className === "col-delete") {
+                        const indices = e.target.parentNode.id.split("-");
+                        deleteColumn(parseInt(indices[2]));
+                    }
+                }
+            });
+        };
+
+
+
+
+
+
+        // Close the dropdown menu if the user clicks outside of it
+        window.onclick = function (event) {
+            if (!event.target.matches(".dropbtn")) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (let i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains("show")) {
+                        openDropdown.classList.remove("show");
+                    }
+                }
+            }
+        };
+    }());
+</script>
+
+{{!-- document.getElementById("reset").addEventListener("click", e => {
+        if (
+            confirm("This will erase all data and set default configs. Are you sure?")
+        ) {
+            this.resetData();
+        }
+    }); --}}
+
+{{!-- // Compare Functions for sorting - ascending
+        const ascSort = (currentCol, a, b) => {
+            let _a = a[currentCol];
+            let _b = b[currentCol];
+            if (_a === "") return 1;
+            if (_b === "") return -1;
+
+            // Check for strings and numbers
+            if (isNaN(_a) || isNaN(_b)) {
+                _a = _a.toUpperCase();
+                _b = _b.toUpperCase();
+                if (_a < _b) return -1;
+                if (_a > _b) return 1;
+                return 0;
+            }
+            return _a - _b;
+        };
+
+        // Descending compare function
+        const dscSort = (currentCol, a, b) => {
+            let _a = a[currentCol];
+            let _b = b[currentCol];
+            if (_a === "") return 1;
+            if (_b === "") return -1;
+
+            // Check for strings and numbers
+            if (isNaN(_a) || isNaN(_b)) {
+                _a = _a.toUpperCase();
+                _b = _b.toUpperCase();
+                if (_a < _b) return 1;
+                if (_a > _b) return -1;
+                return 0;
+            }
+            return _b - _a;
+        };     --}}

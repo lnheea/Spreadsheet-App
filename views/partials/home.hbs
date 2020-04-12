@@ -1,7 +1,87 @@
 {{#if req.session.login}}
 <div class="jumbotron container mt-5">
     <h1 class="display-4">Hello, {{req.session.firstName}}!</h1>
-    <p class="lead">Welcome to the spreadsheet application, this is the part 1</p>
+    <p class="lead">Welcome to the spreadsheet application</p>
     <hr class="my-4">
+    <a class="lead" href="/spreadsheet">Create spreadsheets</a>
 </div>
-{{/if}}
+
+<div id="users" class="container">
+    <table id="SheetsTable" class="table">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col"></th>
+                <th scope="col">Shareable</th>
+                <th scope="col"></th>
+
+            </tr>
+        </thead>
+        <tbody>
+            {{#each userSheets}}
+
+            <tr id="{{this.id}}" class="each">
+                <td contenteditable="true" style="cursor: pointer;">{{this.name}}</td>
+                <td><input type="button" value="delete" class="deleteSheet btn btn-warning"></td>
+                <td>
+                    <input type="checkbox" class="shareable" {{#if this.status}} checked {{/if}} />
+                </td>
+                <td><input type="button" value="update" class="updateSheet btn btn-success"></td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    {{/if}}
+
+
+    <script>
+        // custom element for sheets
+        (function () {
+            function SheetChanges(button) {
+                for (let i = 0; i < button.length; i++) {
+                    button[i].addEventListener('click', function (evt) {
+                        let aVal = evt.target.value;
+                        let id = parseInt(button[i].parentNode.parentNode.id);
+                        let name = button[i].parentNode.parentNode.childNodes[1].innerText;
+                        let status = button[i].parentNode.parentNode.childNodes[5].childNodes[1].checked
+
+                        let req = new XMLHttpRequest();
+                        req.responseType = 'json';
+                        if (aVal === 'update') {
+                            let obj = { name: name, status: status };
+                            req.open('PUT', `/sheet/${id}`);
+                            req.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+                            req.onload = function (evt) {
+                                if (req.status == 200) { // check for ok response
+                                    const resp = req.response;
+                                    console.log(resp);
+                                    console.log("works")
+                                }
+                            };
+                            req.send(JSON.stringify(obj))
+                            alert(`${name} has been updated`)
+
+                        }
+                        else if (aVal === 'delete') {
+                            req.open('DELETE', `/sheet/${id}`);
+                            req.onload = function (evt) {
+                                if (req.status == 200) { // check for ok response
+                                    const resp = req.response;
+                                    console.log(resp);
+                                    let parent = deleteB[i].parentNode.parentNode.parentNode;
+                                    parent.removeChild(deleteB[i].parentNode.parentNode)
+                                }
+                            };
+                            req.send()
+                        }
+
+                    })
+                }
+            }
+            let deleteB = document.querySelectorAll(".deleteSheet");
+            SheetChanges(deleteB);
+
+            let updateB = document.querySelectorAll(".updateSheet");
+            SheetChanges(updateB);
+        }());
+    </script>

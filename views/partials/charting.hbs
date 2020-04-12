@@ -30,12 +30,12 @@
         const container = sType;
         console.log('hits');
         const params = { ...requestParams, method: 'GET' };
-        const resp = await fetch('/sheet-chart-list', params);
+        const resp = await fetch('/sheet-list', params);
         const json = await resp.json();
         container.innerHTML = '';
         container.append(...json.map((x) => {
             const button = document.createElement('button');
-            button.textContent = x;
+            button.textContent = x.name;
             return button;
         }));
         console.log(json);
@@ -49,72 +49,40 @@
         options: {}
     });
 
-    let barChart = new Chart(ctx, {
-        type: 'bar',
-        data: { datasets: [] },
-        options: {
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        //beginAtZero: true,
-                        suggestedMin: -10
-                    }
-                }]
-            }
-        }
-    });
-
-    let pieChart = new Chart(ctx, {
-        type: 'pie',
-        data: { datasets: [] },
-        options: {}
-    });
-
     sType.addEventListener('click', async (evt) => {
         const { target } = evt;
         if (target.nodeName !== 'BUTTON') return;
         const name = target.textContent;
-        // GET /sheet/:name endpoint request
         const params = { ...requestParams, method: 'GET' };
         const resp = await fetch(`/sheet/${name}`, params);
         const values = await resp.json();
         console.log(values);
-
-        // first row contains the index and dataset names
         const datasetNames = values.shift();
         const indexName = datasetNames.shift();
 
-        const colours = ['red', 'green', 'blue', 'black', 'brown',];
+        const colours = ['black', 'red', 'blue', 'yellow', 'pink',];
         let colourIndex = 0;
 
-        // create the plotting datasets from the sheet values
         const datasets = [];
-        const days = [];
-        const barname = [];
         for (let i = 0; i < datasetNames.length; i++) {
-            //const pairs = [];
-            const bname = [];
-            barname.push.apply(barname, bname);
-            for (let j = 0; j < values[i].length; j++) {
-                days.push(values[i][j]);
-                let v1 = values[i][j + 1];
-                bname.push(v1);
-
-                console.log(bname);
-
-                //for(let k = 0; k < (values.length); k++){
-                const dataset = {
-                    label: datasetNames[i],
-                    data: bname[j],
-                    borderColor: colours[colourIndex],
-                    backgroundColor: colours[colourIndex],
-                }
-                datasets.push(dataset);
-                colourIndex = colourIndex >= colours.length ? 0 : colourIndex + 1;
+            const pairs = [];
+            for (let row = 0; row < values.length; row++) {
+                pairs.push({ x: values[row][0], y: values[row][i + 1] });
             }
+            const dataset = {
+                label: datasetNames[i],
+                data: pairs,
+                pointBackgroundColor: colours[colourIndex],
+                borderColor: colours[colourIndex],
+                showLine: true,
+                fill: false,
+                lineTension: 0,
+            }
+            datasets.push(dataset);
+            colourIndex = colourIndex >= colours.length ? 0 : colourIndex + 1;
         }
-        barChart.data.datasets = datasets;
-        barChart.update();
+        scatterChart.data.datasets = datasets;
+        scatterChart.update();
     });
 
 
