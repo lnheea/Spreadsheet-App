@@ -195,10 +195,29 @@
     </div>
     <button id="submit" class="btn btn-primary">Submit</button>
     <button id="save" class="btn btn-primary">Save</button>
+    <button id="reset" class="btn btn-primary">Reset</button>
 </div>
 
+<div class="text-center container">
+    <section class="spreadsheet">
+        <table class="spreadsheet__table" id="table-main">
+            <thead class="spreadsheet__table--headers" id="table-headers">
+            </thead>
+            <tbody class="spreadsheet__table--body" id="table-body">
+            </tbody>
+        </table>
+    </section>
+</div>
 
 <div class="container mt-5">
+    <form>
+        <label>Your Spreadsheets</label>
+        <br />
+        <select id="mySelect" size="1"></select>
+        <input class="btn btn-primary" id="load" type="button" value="LOAD" />
+        <input class="btn btn-primary" id="update" type="button" value="UPDATE" />
+    </form>
+    <br />
     <div>
         <input id="export-csv" class="btn btn-primary" type="button" value="Export">
         <pre id="export-area" placeholder="Export here"></pre>
@@ -214,24 +233,6 @@
             </p>
             <textarea id="csv-input" rows="10" cols="50"></textarea>
         </div>
-    </div>
-
-
-    <form>
-        <label>Your Spreadsheets</label>
-        <select id="mySelect" size="1"></select>
-        <input class="btn btn-primary" id="load" type="button" value="LOAD" />
-        <input class="btn btn-primary" id="update" type="button" value="UPDATE" />
-    </form>
-    <div class="text-center container">
-        <section class="spreadsheet">
-            <table class="spreadsheet__table" id="table-main">
-                <thead class="spreadsheet__table--headers" id="table-headers">
-                </thead>
-                <tbody class="spreadsheet__table--body" id="table-body">
-                </tbody>
-            </table>
-        </section>
     </div>
 </div>
 
@@ -250,7 +251,6 @@
                 'Content-Type': 'application/json',
             },
         };
-        const SPREADSHEET_DB = "spreadsheet_db";
         const submit = document.getElementById('submit');
         const updateButton = document.getElementById('update');
         const exportButton = document.querySelector('#export-csv')
@@ -260,13 +260,26 @@
         const sheetName = document.querySelector('#sheetname');
         const statusToggler = document.getElementById('shareable') // Shareable toggler
         const tableBody = document.getElementsByClassName('spreadsheet__table--body');
+        const table = document.getElementById('table-main');
         const dropDown = document.getElementById("mySelect");
         let row1 = document.getElementById('row') // No of rows
         let col1 = document.getElementById('col'); // No of cols
         let updatedData;
+        let reset = document.getElementById('reset')
+
+        reset.addEventListener('click', function (evt) {
+            sheetName.value = '';
+            row1.value = '';
+            col1.value = '';
+            table.innerHTML = `<table class="spreadsheet__table" id="table-main">
+                <thead class="spreadsheet__table--headers" id="table-headers">
+                </thead>
+                <tbody class="spreadsheet__table--body" id="table-body">
+                </tbody>
+            </table>`;
+        });
 
         function initializeData() {
-            // console.log("initializeData");
             const data = [];
             for (let i = 0; i <= row1.value; i++) {
                 const child = [];
@@ -277,6 +290,17 @@
             }
             return data;
         };
+
+        function reinitializeData(json) {
+            for (let i = 0; i <= json.value; i++) {
+                const child = [];
+                for (let j = 0; j <= json[i].value; j++) {
+                    child.push(json[i]);
+                }
+                json.push(child);
+            }
+        }
+
 
         async function importCSV(name, content) {
             // the transmitted content is plain text from the text area
@@ -304,8 +328,10 @@
             }));
             console.log(json);
         }
+        window.onload = function () {
+            loadNames(dropDown);
+        }
 
-        loadNames(dropDown);
 
         // endpoint PUT /csv-import/:name
         // import CSV from browser
@@ -315,12 +341,12 @@
         importButton.addEventListener('click', async (evt) => {
             const name = importName.value;
             if (name.trim().length === 0) return; // ignore if no name
-            const json = await importCSV(name, csvInput.value);
+            const json = await importCSV(name, csvInput.value.trim());
             console.log(json);
             if (json.ok) {
                 // refresh the names
                 await loadNames(dropDown);
-                alert(`${name} imported`);
+                alert(`${name} imported to the HOME page`);
             }
         });
 
@@ -344,13 +370,13 @@
             const resp = await fetch(`/sheet/${name}`, params);
             let json = await resp.json();
             json = JSON.stringify(json)
-            rebuildSpreadSheet(json);
+            newSheet(json);
         });
 
 
 
         function saveData(data) {
-            localStorage.setItem(SPREADSHEET_DB, JSON.stringify(data));
+            return;
         }
 
         function getSheetInputs() {
@@ -393,7 +419,6 @@
         });
 
         createHeaderRow = (value) => {
-
             const tr = document.createElement("tr");
             tr.setAttribute("id", "h-0");
             for (let i = 0; i <= value; i++) {
@@ -494,7 +519,7 @@
                 }
                 json.length.value++;
                 saveData(data);
-                this.rebuildSpreadSheet(JSON.stringify(json));
+                this.newSheet(JSON.stringify(json));
 
             } else {
                 data = getData();
@@ -549,35 +574,6 @@
                 data[i].splice(currentCol, 1);
             }
             col1.value++;
-            saveData(data);
-            this.createSpreadsheet();
-        };
-
-        // Map for storing the sorting history of every column;
-        const sortingHistory = new Map();
-
-        // Utility function to sort columns
-        sortColumn = currentCol => {
-            let spreadSheetData = getData();
-            let data = spreadSheetData.slice(1);
-            if (!data.some(a => a[currentCol] !== "")) return;
-            if (sortingHistory.has(currentCol)) {
-                const sortOrder = sortingHistory.get(currentCol);
-                switch (sortOrder) {
-                    case "desc":
-                        data.sort(ascSort.bind(this, currentCol));
-                        sortingHistory.set(currentCol, "asc");
-                        break;
-                    case "asc":
-                        data.sort(dscSort.bind(this, currentCol));
-                        sortingHistory.set(currentCol, "desc");
-                        break;
-                }
-            } else {
-                data.sort(ascSort.bind(this, currentCol));
-                sortingHistory.set(currentCol, "asc");
-            }
-            data.splice(0, 0, new Array(data[0].length).fill(""));
             saveData(data);
             this.createSpreadsheet();
         };
@@ -676,9 +672,6 @@
             // Attach click event listener to table headers
             tableHeaders.addEventListener("click", function (e) {
                 if (e.target) {
-                    if (e.target.className === "column-header-span") {
-                        sortColumn(parseInt(e.target.parentNode.id.split("-")[2]));
-                    }
                     if (e.target.className === "dropbtn") {
                         const idArr = e.target.id.split("-");
                         document
@@ -702,7 +695,7 @@
         };
 
         // Rebuild spreadsheet
-        rebuildSpreadSheet = (json) => {
+        newSheet = (json) => {
             const spreadsheetData = getDataBC(json);
 
             const tableHeaderElement = document.getElementById("table-headers");
@@ -717,9 +710,7 @@
             tableBody.innerHTML = "";
 
             tableHeaders.appendChild(createHeaderRow(spreadsheetData[0].length));
-            createTableBody(tableBody, spreadsheetData[0].length, spreadsheetData[0].length);
-
-            // repopulateTable(spreadsheetData); 
+            createTableBody(tableBody, spreadsheetData.length, spreadsheetData[0].length);
 
             if (spreadsheetData.length > 0) {
                 for (let i = 0; i < spreadsheetData.length; i++) {
@@ -744,7 +735,6 @@
                 }
             });
 
-            // Attach click event listener to table body
             tableBody.addEventListener("click", function (e) {
                 if (e.target) {
                     if (e.target.className === "dropbtn") {
@@ -768,12 +758,8 @@
                 }
             });
 
-            // Attach click event listener to table headers
             tableHeaders.addEventListener("click", function (e) {
                 if (e.target) {
-                    if (e.target.className === "column-header-span") {
-                        sortColumn(parseInt(e.target.parentNode.id.split("-")[2]));
-                    }
                     if (e.target.className === "dropbtn") {
                         const idArr = e.target.id.split("-");
                         document
@@ -796,12 +782,6 @@
             });
         };
 
-
-
-
-
-
-        // Close the dropdown menu if the user clicks outside of it
         window.onclick = function (event) {
             if (!event.target.matches(".dropbtn")) {
                 var dropdowns = document.getElementsByClassName("dropdown-content");
@@ -815,47 +795,3 @@
         };
     }());
 </script>
-
-{{!-- document.getElementById("reset").addEventListener("click", e => {
-        if (
-            confirm("This will erase all data and set default configs. Are you sure?")
-        ) {
-            this.resetData();
-        }
-    }); --}}
-
-{{!-- // Compare Functions for sorting - ascending
-        const ascSort = (currentCol, a, b) => {
-            let _a = a[currentCol];
-            let _b = b[currentCol];
-            if (_a === "") return 1;
-            if (_b === "") return -1;
-
-            // Check for strings and numbers
-            if (isNaN(_a) || isNaN(_b)) {
-                _a = _a.toUpperCase();
-                _b = _b.toUpperCase();
-                if (_a < _b) return -1;
-                if (_a > _b) return 1;
-                return 0;
-            }
-            return _a - _b;
-        };
-
-        // Descending compare function
-        const dscSort = (currentCol, a, b) => {
-            let _a = a[currentCol];
-            let _b = b[currentCol];
-            if (_a === "") return 1;
-            if (_b === "") return -1;
-
-            // Check for strings and numbers
-            if (isNaN(_a) || isNaN(_b)) {
-                _a = _a.toUpperCase();
-                _b = _b.toUpperCase();
-                if (_a < _b) return 1;
-                if (_a > _b) return -1;
-                return 0;
-            }
-            return _b - _a;
-        };     --}}

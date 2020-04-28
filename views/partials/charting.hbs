@@ -6,13 +6,14 @@
     }
 </style>
 
-<h1 class="text-center pt-2">Create Charts from the spreadsheets</h1>
+<h3 class="text-center pt-2 text-monospace">Create Charts from the spreadsheets</h3>
 
 <div id="sheetType"></div>
 <div id="chartArea">
     <canvas id="lineArea"></canvas>
     <canvas id="pieArea"></canvas>
 </div>
+
 
 <script>
     const requestParams = {
@@ -35,6 +36,7 @@
         container.innerHTML = '';
         container.append(...json.map((x) => {
             const button = document.createElement('button');
+            button.className = "btn btn-success ml-3"
             button.textContent = x.name;
             return button;
         }));

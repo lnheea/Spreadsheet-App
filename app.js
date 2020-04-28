@@ -411,37 +411,6 @@ app.put("/value-update/:name", jsonParser, function (req, res) {
   );
 });
 
-// Handler to copy sheets
-app.put("/copy-sheet/:name", jsonParser, function (req, res) {
-  const name = req.body.name;
-  db.serialize(function () {
-    db.get(`SELECT * FROM public where name=?`, [name], function (err) {
-      if (!err) {
-        res.send({ status: "successful" });
-      } else {
-        res.send({ status: err });
-      }
-    });
-    db.get("SELECT last_insert_rowid()", [], function (err, row) {
-      let id = row["last_insert_rowid()"];
-      let post = { id: id };
-      generate_notes_page(req, res);
-    });
-  });
-
-  // db.run(
-  //   `UPDATE public SET name=?, sheet=?, status=? WHERE email = ?`,
-  //   [name, strValues, status, req.session.email],
-  //   function (err) {
-  //     if (!err) {
-  //       res.send({ status: "successful" });
-  //     } else {
-  //       res.send({ status: err });
-  //     }
-  //   }
-  // );
-});
-
 // Handler to delete sheets
 app.delete("/sheet/:id", jsonParser, function (req, res, next) {
   let id = req.params.id;
@@ -498,22 +467,18 @@ app.put("/update-user", jsonParser, function (req, res) {
   );
 });
 
-// // THIS HANDLER NOT WORKING
-// app.put("/update-all-sheet", jsonParser, function (req, res) {
-//   let email = req.body.email;
-//   let name = req.body.name;
-//   db.run(`UPDATE public SET name=? WHERE email=?`, [name, email], function (
-//     err
-//   ) {
-//     if (!err) {
-//       console.log("updates sheet");
-//       res.send({ status: "successful" });
-//     } else {
-//       console.log(err);
-//       res.send({ status: "failed" });
-//     }
-//   });
-// });
+app.put("/update-all-sheet", jsonParser, function (req, res) {
+  let name = req.body.name;
+  db.run(`UPDATE public SET name=? WHERE email=?`, [passwd, email], function (
+    err
+  ) {
+    if (!err) {
+      res.send({ status: "successful" });
+    } else {
+      res.send({ status: "failed" });
+    }
+  });
+});
 
 app.put("/user/:email", jsonParser, function (req, res) {
   let email = req.params.email;
@@ -555,6 +520,7 @@ app.get("/public", function (req, res) {
       res.type(".html");
       res.render("public", {
         names: rows,
+        req: req,
       });
     } else {
       res.send({ err: err });
@@ -575,9 +541,9 @@ app.get("/public", authenticate, function (req, res) {
 app.put("/csv-import/:name", textBody, (req, res) => {
   const name = req.params.name;
   const sheet = CSV.parse(req.body);
-  console.log("importing", req.body);
+  // console.log("importing", name);
 
-  console.log(sheet);
+  console.log("sheet", sheet);
   const strValues = JSON.stringify(sheet);
   // insert it into the data base
   db.run(

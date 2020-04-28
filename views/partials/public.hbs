@@ -33,9 +33,13 @@
         if (aVal === 'COPY') {
             const name = evt.target.parentNode.textContent.split("\n")[0];
             console.log(name);
-            const params = { ...requestParams, method: 'PUT' };
-            const resp = await fetch(`/copy-sheet/${name}`, params);
-            const json = await resp.json();
+            let params = { ...requestParams, method: 'GET' };
+            let resp = await fetch(`/sheet/${name}`, params);
+            let json = await resp.json();
+            let values = JSON.stringify({ "values": json, "status": false })
+            params = { ...requestParams, method: 'POST', body: values };
+            resp = await fetch(`/sheet/${name}`, params);
+            json = await resp.json();
             console.log(json)
             alert(`${name} has been copied`);
         }
